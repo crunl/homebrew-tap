@@ -31,7 +31,6 @@ cask "clash-nyanpasu" do
     end
   end
 
-  auto_updates true
   depends_on :macos
 
   app "Clash Nyanpasu.app"
