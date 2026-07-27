@@ -1,0 +1,22 @@
+name: Audit
+
+on:
+  push:
+    branches: [main]
+    paths: ["Casks/**", "Formula/**"]
+  pull_request:
+    paths: ["Casks/**", "Formula/**"]
+
+jobs:
+  audit:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Style check
+        run: |
+          shopt -s nullglob
+          files=(Casks/*.rb Formula/*.rb)
+          if [ ${#files[@]} -gt 0 ]; then
+            brew style "${files[@]}"
+          fi

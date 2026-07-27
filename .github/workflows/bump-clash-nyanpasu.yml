@@ -1,0 +1,75 @@
+name: Bump clash-nyanpasu
+
+on:
+  schedule:
+    - cron: "30 3 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  bump:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check upstream version
+        id: upstream
+        run: |
+          json=$(curl -fsSL "https://api.github.com/repos/libnyanpasu/clash-nyanpasu/releases/tags/pre-release")
+          asset=$(echo "$json" | jq -r '.assets[].name | select(test("_aarch64\\.dmg$"))')
+          version=$(echo "$asset" | sed -E 's/^Clash\.Nyanpasu_(.+)\+([0-9a-f]+)_aarch64\.dmg$/\1,\2/')
+          if [ -z "$version" ] || [ "$version" = "$asset" ]; then
+            echo "Failed to parse version from asset: $asset" >&2
+            exit 1
+          fi
+          current=$(sed -nE 's/^  version "(.+)"$/\1/p' Casks/clash-nyanpasu.rb)
+          echo "upstream=$version current=$current"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          if [ "$version" = "$current" ]; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Compute new sha256
+        if: steps.upstream.outputs.changed == 'true'
+        id: sha
+        run: |
+          version="${{ steps.upstream.outputs.version }}"
+          semver="${version%,*}"
+          hash="${version#*,}"
+          base="https://github.com/libnyanpasu/clash-nyanpasu/releases/download/pre-release"
+          curl -fsSL -o arm.dmg "$base/Clash.Nyanpasu_${semver}%2B${hash}_aarch64.dmg"
+          curl -fsSL -o x64.dmg "$base/Clash.Nyanpasu_${semver}%2B${hash}_x64.dmg"
+          echo "arm=$(shasum -a 256 arm.dmg | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
+          echo "x64=$(shasum -a 256 x64.dmg | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
+          rm arm.dmg x64.dmg
+
+      - name: Update cask
+        if: steps.upstream.outputs.changed == 'true'
+        run: |
+          version="${{ steps.upstream.outputs.version }}"
+          arm_sha="${{ steps.sha.outputs.arm }}"
+          x64_sha="${{ steps.sha.outputs.x64 }}"
+          file=Casks/clash-nyanpasu.rb
+          old_arm=$(awk '/on_arm do/,/end/' "$file" | sed -nE 's/.*sha256 "([0-9a-f]+)".*/\1/p')
+          old_x64=$(awk '/on_intel do/,/end/' "$file" | sed -nE 's/.*sha256 "([0-9a-f]+)".*/\1/p')
+          sed -i '' -E "s/^  version \".+\"$/  version \"$version\"/" "$file"
+          sed -i '' "s/$old_arm/$arm_sha/" "$file"
+          sed -i '' "s/$old_x64/$x64_sha/" "$file"
+
+      - name: Audit cask
+        if: steps.upstream.outputs.changed == 'true'
+        run: |
+          brew style Casks/clash-nyanpasu.rb
+
+      - name: Commit and push
+        if: steps.upstream.outputs.changed == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add Casks/clash-nyanpasu.rb
+          git commit -m "clash-nyanpasu${{ steps.upstream.outputs.version }}"
+          git push
