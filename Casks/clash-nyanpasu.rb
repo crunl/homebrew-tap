@@ -37,6 +37,7 @@ cask "clash-nyanpasu" do
   app "Clash Nyanpasu.app"
 
   zap trash: [
+    "~/Library/Application Support/Clash Nyanpasu",
     "~/Library/Application Support/moe.elaina.clash.nyanpasu",
     "~/Library/Caches/moe.elaina.clash.nyanpasu",
     "~/Library/Preferences/moe.elaina.clash.nyanpasu.plist",
