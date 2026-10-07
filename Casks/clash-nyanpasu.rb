@@ -1,14 +1,14 @@
 cask "clash-nyanpasu" do
-  version "2.0.1-alpha,6c7bbea"
+  version "2.0.1-alpha,21bd0a9"
 
   on_arm do
-    sha256 "52af878685a2dc19da543474f007865683864329cd1d29afe871986c4c735e32"
+    sha256 "56144273adda7b24d1a1921f3a30d8e930e1ed4a3f1bee7552a0f0fc96218995"
 
     url "https://github.com/libnyanpasu/clash-nyanpasu/releases/download/pre-release/Clash.Nyanpasu_#{version.csv.first}%2B#{version.csv.second}_aarch64.dmg",
         verified: "github.com/libnyanpasu/clash-nyanpasu/"
   end
   on_intel do
-    sha256 "76023e0a8cf08b6c00fed301aa73cc28d65395544e6052599cbab6c7ba8d4e01"
+    sha256 "e2a30f3de22c636864dbc97881599142314ec981702095dd7102c1e0fe3915c1"
 
     url "https://github.com/libnyanpasu/clash-nyanpasu/releases/download/pre-release/Clash.Nyanpasu_#{version.csv.first}%2B#{version.csv.second}_x64.dmg",
         verified: "github.com/libnyanpasu/clash-nyanpasu/"
